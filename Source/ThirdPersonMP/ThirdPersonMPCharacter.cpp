@@ -168,7 +168,7 @@ void AThirdPersonMPCharacter::OnHealthUpdate() {
 	}
 
 	// Server-specific functionality
-	if (Role == ROLE_Authority) {
+	if (GetLocalRole() == ROLE_Authority) {
 		FString healthMessage = FString::Printf(TEXT("%s now has %f health remaining."), *GetFName().ToString(), CurrentHealth);
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, healthMessage);
 	}
@@ -181,4 +181,17 @@ void AThirdPersonMPCharacter::OnHealthUpdate() {
 
 void AThirdPersonMPCharacter::OnRep_CurrentHealth() {
 	OnHealthUpdate();
+}
+
+void AThirdPersonMPCharacter::SetCurrentHealth(float healthValue) {
+	if (GetLocalRole() == ROLE_Authority) {
+		CurrentHealth = FMath::Clamp(healthValue, 0.f, MaxHealth);
+		OnHealthUpdate();
+	}
+}
+
+float AThirdPersonMPCharacter::TakeDamage(float DamageTaken, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) {
+	float damageApplied = CurrentHealth - DamageTaken;
+	SetCurrentHealth(damageApplied);
+	return damageApplied;
 }
