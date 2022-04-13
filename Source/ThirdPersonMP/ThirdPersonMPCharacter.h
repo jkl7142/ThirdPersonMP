@@ -58,19 +58,6 @@ protected:
 	/** Handler for when a touch input stops. */
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
 
-	/** The player's maximum health. This is the highest that their health can be,
-	*	and value that their starts at when spawned.
-	*/
-	UPROPERTY(EditDefaultsOnly, Category = "Health")
-	float MaxHealth;
-
-	/** The player's current health. when reduced to 0, they are considered dead.*/
-	float CurrentHealth;
-
-	/** RepNotify for changes made to current health.*/
-	UFUNCTION()
-	void OnRep_CurrentHealth();
-
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -81,5 +68,29 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+// add code
+public:
+	/** Property replication */
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifttimeProps) const override;
+
+protected:
+	/** The player's maximum health. This is the highest that their health can be,
+	*	and value that their starts at when spawned.
+	*/
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+		float MaxHealth;
+
+	/** The player's current health. when reduced to 0, they are considered dead.*/
+	float CurrentHealth;
+
+	/** RepNotify for changes made to current health.*/
+	UFUNCTION()
+		void OnRep_CurrentHealth();
+
+	/** Response to health being updated. Called on the server immediately after modification,
+	*	and on clients in response to a RepNotify
+	*/
+	void OnHealthUpdate();
 };
 
