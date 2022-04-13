@@ -19,6 +19,15 @@ AThirdPersonMPProjectile::AThirdPersonMPProjectile()
 	// as long as an authoritative copy of the Actor exists on the server, it will try to replicate the Actor to all connected clients.
 	bReplicates = true;
 
+	DamageType = UDamageType::StaticClass();
+	Damage = 10.0f;
+
+	// Set the asset reference for our ExplosionEffect to be the P_Explosion asset inside of StarterContent.
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> DefaultExplosionEffect(TEXT("/Game/StarterContent/Particles/P_Explosion.P_Explosion"));
+	if (DefaultExplosionEffect.Succeeded()) {
+		ExplosionEffect = DefaultExplosionEffect.Object;
+	}
+
 	// Definition for the SphereComponent that will serve as the Root component for the projectile and its collision.
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("RootComponent"));
 	SphereComponent->InitSphereRadius(37.5f);
@@ -31,7 +40,7 @@ AThirdPersonMPProjectile::AThirdPersonMPProjectile()
 	}
 
 	// Definition for the Mesh that will serve as our visual representation.
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultMesh(TEXT("/Game/StarterContent/Shape_Sphere.Shape_Sphere"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultMesh(TEXT("/Game/StarterContent/Shapes/Shape_Sphere.Shape_Sphere"));
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	StaticMesh->SetupAttachment(RootComponent);
 
@@ -42,12 +51,6 @@ AThirdPersonMPProjectile::AThirdPersonMPProjectile()
 		StaticMesh->SetRelativeScale3D(FVector(0.75f, 0.75f, 0.75f));
 	}
 
-	// Set the asset reference for our ExplosionEffect to be the P_Explosion asset inside of StarterContent.
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> DefaultExplosionEffect(TEXT("/Game/StarterContent/Particles/P_Explosion.P_Explosion"));
-	if (DefaultExplosionEffect.Succeeded()) {
-		ExplosionEffect = DefaultExplosionEffect.Object;
-	}
-
 	// Definition for the Projectile Movement Component.
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	ProjectileMovementComponent->SetUpdatedComponent(SphereComponent);
@@ -55,9 +58,6 @@ AThirdPersonMPProjectile::AThirdPersonMPProjectile()
 	ProjectileMovementComponent->MaxSpeed = 1500.0f;
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->ProjectileGravityScale = 0.0f;
-
-	DamageType = UDamageType::StaticClass();
-	Damage = 10.0f;
 }
 
 // Called when the game starts or when spawned
@@ -67,11 +67,12 @@ void AThirdPersonMPProjectile::BeginPlay()
 	
 }
 
-// Called every frame
-void AThirdPersonMPProjectile::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+void AThirdPersonMPProjectile::OnProjectileImpact(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {
+	if (OtherActor) {
+		UGameplayStatics::ApplyPointDamage(OtherActor, Damage, NormalImpulse, Hit, GetInstigator()->Controller, this, DamageType);
+	}
 
+	Destroy();
 }
 
 void AThirdPersonMPProjectile::Destroyed() {
@@ -79,10 +80,9 @@ void AThirdPersonMPProjectile::Destroyed() {
 	UGameplayStatics::SpawnEmitterAtLocation(this, ExplosionEffect, spawnLocation, FRotator::ZeroRotator, true, EPSCPoolMethod::AutoRelease);
 }
 
-void AThirdPersonMPProjectile::OnProjectileImpact(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {
-	if (OtherActor) {
-		UGameplayStatics::ApplyPointDamage(OtherActor, Damage, NormalImpulse, Hit, Instigator->Controller, this, DamageType);
-	}
+// Called every frame
+void AThirdPersonMPProjectile::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
 
-	Destroy();
 }
