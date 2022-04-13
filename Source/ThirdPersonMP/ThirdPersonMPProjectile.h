@@ -49,4 +49,10 @@ public:
 	// The damage dealt by this projectile.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
 	float Damage;
+
+protected:
+	virtual void Destroyed() override;
+
+	UFUNCTION(Category = "Projectile")
+	void OnProjectileImpact(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 };
